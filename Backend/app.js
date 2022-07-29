@@ -1,10 +1,11 @@
-const { application } = require('express');
+const  application  = require('express');
 const express = require('express');
 const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
+const path = require('path');
 
-const saucesRoutes = require('./routes/sauces');
-const userRoutes = require('./routes/User');
+const saucesRoutes = require('./routes/sauce-route');
+const userRoutes = require('./routes/user-route');
 
 mongoose.connect('mongodb+srv://Dakkarus:Mamounette@cluster0.gekv3ms.mongodb.net/?retryWrites=true&w=majority',
   { useNewUrlParser: true,
@@ -28,5 +29,6 @@ const app= express();
 
   app.use('/api/sauces', saucesRoutes);
   app.use('/api/auth', userRoutes);
+  app.use('/images', express.static(path.join(__dirname,'images')));
 
 module.exports = app;
