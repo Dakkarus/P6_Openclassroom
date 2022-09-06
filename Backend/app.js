@@ -3,13 +3,14 @@ const mongoose = require('mongoose');
 const bodyParser = require('body-parser');
 const path = require('path');
 
-const saucesRoutes = require('./routes/sauce-route');
+
 const userRoutes = require('./routes/user-route');
+const postesRoutes = require('./routes/poste-route');
 
 const app = express();
 
 
-mongoose.connect('mongodb+srv://Dakkarus:Mamounette@cluster0.gekv3ms.mongodb.net/?retryWrites=true&w=majority',
+mongoose.connect('mongodb+srv://Dakkarus:Mamounette1@groupomania.i51dbhn.mongodb.net/?retryWrites=true&w=majority',
   { useNewUrlParser: true,
     useUnifiedTopology: true })
   .then(() => console.log('Connexion à MongoDB réussie !'))
@@ -29,7 +30,7 @@ mongoose.connect('mongodb+srv://Dakkarus:Mamounette@cluster0.gekv3ms.mongodb.net
 
   app.use(bodyParser.json());
 
-  app.use('/api/sauces', saucesRoutes);
+  app.use('/api/postes', postesRoutes);
   app.use('/api/auth', userRoutes);
   app.use('/images', express.static(path.join(__dirname,'images')));
 
