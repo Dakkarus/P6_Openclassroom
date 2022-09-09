@@ -1,7 +1,7 @@
 const Poste = require('../models/Poste');
 const fs = require('fs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+
 
 //Récupération d'une poste
 exports.getOnePoste = (req, res, next) => {
@@ -52,35 +52,25 @@ exports.deletePoste = (req, res, next) => {
                 });
             }
             else {
-                if (User.Admin === false) {
-                    // poste dispo 
-                    const token = req.headers.authorization.split(' ')[1];
-                    const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
-                    const userId = decodedToken.userId;
+                // poste dispo 
+                const token = req.headers.authorization.split(' ')[1];
+                const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
+                const userId = decodedToken.userId;
 
-                    if (poste.userId !== userId) {
-                        res.status(401).json({
-                            message: 'Requête non autorisée!'
-                        });
-                    }
-                    else {
-                        // utilisateur a le droit de supprimer 
-                        const filename = poste.imageUrl.split('/images/')[1];
-                        fs.unlink(`images/${filename}`, () => {
-                            Poste.deleteOne({ _id: req.params.id })
-                                .then(() => res.status(200).json({ message: 'Poste supprimée !' }))
-                                .catch(error => res.status(400).json({ message: error.message }));
-                        });
-                    }
-                } else if (User.Admin === true) {
+                if (poste.userId !== userId) {
+                    res.status(401).json({
+                        message: 'Requête non autorisée!'
+                    });
+                }
+                else {
+                    // utilisateur a le droit de supprimer 
                     const filename = poste.imageUrl.split('/images/')[1];
                     fs.unlink(`images/${filename}`, () => {
                         Poste.deleteOne({ _id: req.params.id })
                             .then(() => res.status(200).json({ message: 'Poste supprimée !' }))
-                            .catch(error => res.status(400).json({ message: "pas possible" }));
+                            .catch(error => res.status(400).json({ message: error.message }));
                     });
                 }
-
             }
 
         })
@@ -89,44 +79,30 @@ exports.deletePoste = (req, res, next) => {
 
 
 exports.modifyPoste = (req, res, next) => {
-    if (User.Admin == false) {
-        if (req.file) {
-            Poste.findOne({ _id: req.params.id })
-                .then((poste) => {
-                    const filename = poste.imageUrl.split("/images/")[1];
-                    fs.unlink(`images/${filename}`, (err) => {
-                        if (err) console.log(err);
-                    });
-                })
-                .catch((error) => console.log(error));
-        }
-
-        const posteObject = req.file
-            ? {
-                ...JSON.parse(req.body.poste),
-                imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`,
-            }
-            : { ...req.body };
-        Poste.updateOne(
-            { _id: req.params.id },
-            { ...posteObject, _id: req.params.id }
-        )
-            .then(() => res.status(200).json({ message: "Objet modifié !" }))
-            .catch((error) => res.status(400).json({ error }));
-    } else {
-        const posteObject = req.file
-            ? {
-                ...JSON.parse(req.body.poste),
-                imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`,
-            }
-            : { ...req.body};
-        Poste.updateOne(
-            { _id: req.params.id },
-            { ...posteObject, _id: req.params.id }
-        )
-            .then(() => res.status(200).json({ message: "Objet modifié !" }))
-            .catch((error) => res.status(400).json({ error }));
+    if (req.file) {
+        Poste.findOne({ _id: req.params.id })
+            .then((poste) => {
+                const filename = poste.imageUrl.split("/images/")[1];
+                fs.unlink(`images/${filename}`, (err) => {
+                    if (err) console.log(err);
+                });
+            })
+            .catch((error) => console.log(error));
     }
+
+    const posteObject = req.file
+        ? {
+            ...JSON.parse(req.body.poste),
+            imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename
+                }`,
+        }
+        : { ...req.body };
+    Poste.updateOne(
+        { _id: req.params.id },
+        { ...posteObject, _id: req.params.id }
+    )
+        .then(() => res.status(200).json({ message: "Objet modifié !" }))
+        .catch((error) => res.status(400).json({ error }));
 };
 
 //Like/dislike poste
