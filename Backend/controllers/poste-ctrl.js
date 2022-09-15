@@ -29,11 +29,13 @@ exports.createPoste = (req, res, next) => {
     const token = req.headers.authorization.split(' ')[1];
     const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
     const userId = decodedToken.userId;
+    const userName = decodedToken.name;
 
     const poste = new Poste({
         ...posteObject,
         imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
-        userId: userId
+        userId: userId,
+        userName :userName,
     });
     poste.save()
         .then(() => res.status(201).json({ message: 'Objet enregistré !' }))
@@ -56,8 +58,9 @@ exports.deletePoste = (req, res, next) => {
                 const token = req.headers.authorization.split(' ')[1];
                 const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
                 const userId = decodedToken.userId;
+                const isadmin = decodedToken.isadmin;
 
-                if (poste.userId !== userId) {
+                if (poste.userId !== userId && !isadmin) {
                     res.status(401).json({
                         message: 'Requête non autorisée!'
                     });
@@ -79,30 +82,51 @@ exports.deletePoste = (req, res, next) => {
 
 
 exports.modifyPoste = (req, res, next) => {
-    if (req.file) {
-        Poste.findOne({ _id: req.params.id })
-            .then((poste) => {
-                const filename = poste.imageUrl.split("/images/")[1];
-                fs.unlink(`images/${filename}`, (err) => {
-                    if (err) console.log(err);
-                });
-            })
-            .catch((error) => console.log(error));
-    }
-
-    const posteObject = req.file
-        ? {
-            ...JSON.parse(req.body.poste),
-            imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename
-                }`,
+    Poste.findOne({ _id: req.params.id })
+    .then((post) => {
+        if (!post) {
+            res.status(404).json({
+                message: 'poste non trouvé !'
+            });
         }
-        : { ...req.body };
-    Poste.updateOne(
-        { _id: req.params.id },
-        { ...posteObject, _id: req.params.id }
-    )
-        .then(() => res.status(200).json({ message: "Objet modifié !" }))
-        .catch((error) => res.status(400).json({ error }));
+        else {
+            // post dispo 
+            const token = req.headers.authorization.split(' ')[1];
+            const decodedToken = jwt.verify(token, 'RANDOM_TOKEN_SECRET');
+            const userId = decodedToken.userId;
+            const isadmin = decodedToken.isadmin;
+            if (post.userId !== userId && !isadmin) {
+                res.status(401).json({
+                    message: 'Requête non autorisée!'
+                });
+            }
+            else {
+
+                if (req.file) {
+                    const filename = post.imageUrl.split("/images/")[1];
+                    fs.unlink(`images/${filename}`, (err) => {
+                        if (err) console.log(err);
+                    });
+                }
+
+                const postObject = req.file
+                    ? {
+                        ...JSON.parse(req.body.post),
+                        imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename
+                            }`,
+                    }
+                    : { ...req.body };
+                Poste.updateOne(
+                    { _id: req.params.id },
+                    { ...postObject, _id: req.params.id }
+                )
+                    .then(() => res.status(200).json({ message: "poste modifié !" }))
+                    .catch((error) => res.status(400).json({ error }));
+                         
+            }
+        }
+    })
+                .catch((error) => console.log(error));
 };
 
 //Like/dislike poste
